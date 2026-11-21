@@ -247,7 +247,10 @@ class SWManagerApp(ctk.CTk):
         except Exception:
             mapping = {}
         if mapping:
-            self.after(0, lambda: self._apply_icons(mapping))
+            try:
+                self.after(0, lambda: self._apply_icons(mapping))
+            except RuntimeError:
+                pass  # window closed while icons were loading
 
     def _apply_icons(self, mapping):
         self._icon_map.update(mapping)

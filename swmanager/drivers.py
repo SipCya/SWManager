@@ -78,56 +78,51 @@ def _parse_devices(text: str) -> list[Device]:
 
 
 def list_third_party_drivers() -> list[DriverPackage]:
-    """Installed third-party driver packages (pnputil)."""
-    res = utils.run(["pnputil", "/enum-drivers"], timeout=90)
-    return _parse_pnputil(res.out)
+    """Installed third-party device drivers.
+
+    Uses the CIM class ``Win32_PnPSignedDriver`` (English property names on any
+    Windows language) and excludes Microsoft's own drivers. This avoids parsing
+    the localized text output of ``pnputil``.
+    """
+    script = (
+        "Get-CimInstance Win32_PnPSignedDriver -ErrorAction SilentlyContinue | "
+        "Where-Object { $_.DriverProviderName -and "
+        "$_.DriverProviderName -ne 'Microsoft' } | "
+        "ForEach-Object { [pscustomobject]@{ "
+        "name = $_.DeviceName; provider = $_.DriverProviderName; "
+        "version = $_.DriverVersion; cls = $_.DeviceClass; inf = $_.InfName; "
+        "date = if ($_.DriverDate) { $_.DriverDate.ToString('yyyy-MM-dd') } "
+        "else { '' } } } | Sort-Object provider,name -Unique | "
+        "ConvertTo-Json -Compress"
+    )
+    res = utils.run_powershell(script, timeout=120)
+    return _parse_drivers(res.out)
 
 
-def _parse_pnputil(text: str) -> list[DriverPackage]:
-    packages: list[DriverPackage] = []
-    cur: dict[str, str] = {}
+def _parse_drivers(text: str) -> list[DriverPackage]:
+    import json
 
-    def flush():
-        if cur.get("published_name"):
-            packages.append(
-                DriverPackage(
-                    published_name=cur.get("published_name", ""),
-                    provider=cur.get("provider", ""),
-                    cls=cur.get("class", ""),
-                    version=cur.get("version", ""),
-                    date=cur.get("date", ""),
-                )
+    text = (text or "").strip()
+    if not text:
+        return []
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        return []
+    if isinstance(data, dict):
+        data = [data]
+    packages = []
+    for d in data:
+        packages.append(
+            DriverPackage(
+                published_name=str(d.get("inf") or ""),
+                provider=str(d.get("provider") or ""),
+                cls=str(d.get("cls") or ""),
+                version=str(d.get("version") or ""),
+                date=str(d.get("date") or ""),
             )
-
-    for raw in (text or "").splitlines():
-        line = raw.strip()
-        if not line:
-            continue
-        low = line.lower()
-        # Labels are localized: detect fields by keyword.
-        if low.startswith(("published name", "nome pubblicato")):
-            flush()
-            cur = {"published_name": _value(line)}
-        elif "provider" in low and ":" in line:
-            cur["provider"] = _value(line)
-        elif ("class name" in low or "classe" in low or
-              low.startswith("class")) and ":" in line:
-            cur.setdefault("class", _value(line))
-        elif ("driver version" in low or "versione driver" in low or
-              "versione" in low) and ":" in line:
-            val = _value(line)
-            parts = val.split()
-            if len(parts) >= 2:
-                cur["date"] = parts[0]
-                cur["version"] = parts[-1]
-            else:
-                cur["version"] = val
-    flush()
+        )
     return packages
-
-
-def _value(line: str) -> str:
-    return line.split(":", 1)[1].strip() if ":" in line else ""
 
 
 def search_driver_updates() -> tuple[list[DriverUpdate], str]:

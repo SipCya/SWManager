@@ -96,12 +96,16 @@ def relaunch_as_admin() -> bool:
     should then exit), False on error.
     """
     try:
-        params = " ".join(f'"{a}"' for a in sys.argv)
-        # ShellExecuteW returns > 32 on success.
+        script = os.path.abspath(sys.argv[0])
+        workdir = os.path.dirname(script)
+        args = [script] + sys.argv[1:]
+        params = " ".join(f'"{a}"' for a in args)
+        # An elevated process starts in system32 by default, so pass an
+        # absolute script path and the working directory explicitly.
         rc = ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", sys.executable, params, None, 1
+            None, "runas", sys.executable, params, workdir, 1
         )
-        return int(rc) > 32
+        return int(rc) > 32  # ShellExecuteW returns > 32 on success.
     except Exception:
         return False
 

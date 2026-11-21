@@ -12,7 +12,6 @@ from __future__ import annotations
 import json
 import os
 import stat as _stat
-import tempfile
 from dataclasses import dataclass
 
 from . import icons, utils
