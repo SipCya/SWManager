@@ -10,7 +10,7 @@ programs**, and **check drivers** — all using the official Windows tooling.
 
 ## Features
 
-### 🧩 Programs (via `winget`)
+### Programs (via `winget`)
 - **Upgradable / All** — list apps that have updates, or every installed app.
 - **Update selected / Update all** — silent upgrades.
 - **Uninstall** — with confirmation.
@@ -24,14 +24,14 @@ programs**, and **check drivers** — all using the official Windows tooling.
     ghost entry directly, without waiting for winget to fail.
 - The list **keeps its scroll position** after an uninstall — no re-scrolling.
 
-### 🧹 Cleanup
+###  Cleanup
 - **Analyze space** — recoverable size per category: user temp, Windows temp,
   Prefetch, Windows Update cache, thumbnails, Edge and Chrome caches, Recycle
   Bin.
 - **Clean selected** — deletes only the checked categories, with confirmation.
   Files in use are skipped without interrupting the operation.
 
-### 🧽 Leftovers (uninstalled programs)
+###  Leftovers (uninstalled programs)
 Cleans up what remains after an uninstall. Three modes:
 - **Shortcuts** — broken `.lnk` shortcuts (Desktop, Start Menu) that point to
   files that no longer exist. Reliable, **preselected**.
@@ -45,7 +45,7 @@ Use the **Select all** checkbox to toggle the whole list at once.
 > All deletions go to the **Recycle Bin** (recoverable), never permanent.
 > Windows system junctions (e.g. "Application Data") are excluded automatically.
 
-### 🔧 Drivers
+###  Drivers
 - **Check for updates** — uses the official *Windows Update Agent* API.
 - **Problem devices** — only present devices in an error state.
 - **Installed drivers** — third-party driver packages (`pnputil`).
